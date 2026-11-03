@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fake News — Quiz, Manchetes e Notícias</title>
+<style>
+/* ============================================================
+   BASE
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  min-height:100vh;
+  padding:80px 16px 40px;
+  transition:background .3s, color .3s;
+  line-height:1.5;
+}
+body.view-quiz,
+body.view-manchetes{
+  background:linear-gradient(160deg,#0f172a 0%,#1e1b4b 100%);
+  background-attachment:fixed;
+  color:#f1f5f9;
+}
+body.view-noticias{
+  background:#f5f2ec;
+  color:#1a1a1a;
+}
+body.view-noticias.dark{
+  background:linear-gradient(160deg,#0f172a 0%,#1e1b4b 100%);
+  background-attachment:fixed;
+  color:#f1f5f9;
+}
+
+/* ============================================================
+   NAV SUPERIOR
+   ============================================================ */
+.top-nav{
+  position:fixed;
+  top:0;left:0;right:0;
+  background:rgba(15,23,42,.97);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  padding:12px 16px;
+  z-index:9999;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+}
+.top-nav a{
+  color:#94a3b8;
+  text-decoration:none;
+  padding:10px 22px;
+  border-radius:8px;
+  font-size:.85rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+  user-select:none;
+}
+.top-nav a:hover{background:rgba(255,255,255,.08);color:#f1f5f9;}
+.top-nav a.active{background:#38bdf8;color:#0f172a;}
+@media(max-width:480px){
+  .top-nav{padding:10px 8px;gap:2px;}
+  .top-nav a{padding:9px 12px;font-size:.75rem;}
+}
+
+/* ============================================================
+   SEÇÕES (views)
+   ============================================================ */
+.view{display:none;}
+.view.active{display:block;animation:fadeIn .35s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ============================================================
+   ==================== VIEW: QUIZ =============================
+   ============================================================ */
+#viewQuiz{max-width:640px;margin:0 auto;}
+#viewQuiz .container{
+  background:#1e293b;
+  border-radius:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+  overflow:hidden;
+}
+#viewQuiz .header{
+  padding:20px 24px;
+  background:rgba(56,189,248,.1);
+  border-bottom:1px solid rgba(56,189,248,.2);
+}
+#viewQuiz .header h1{
+  font-size:1.15rem;font-weight:700;color:#38bdf8;letter-spacing:.5px;
+}
+#viewQuiz .header p{font-size:.8rem;color:#94a3b8;margin-top:4px;}
+#viewQuiz .progress-wrap{height:6px;background:#334155;position:relative;}
+#viewQuiz .progress-bar{
+  height:100%;background:linear-gradient(90deg,#38bdf8,#818cf8);
+  width:0%;transition:width .4s ease;
+}
+#viewQuiz .content{padding:28px 24px 32px;}
+#viewQuiz .counter{
+  font-size:.8rem;color:#94a3b8;text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:12px;
+}
+#viewQuiz .statement{
+  font-size:1.15rem;line-height:1.5;font-weight:600;margin-bottom:24px;min-height:80px;
+}
+#viewQuiz .buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+#viewQuiz .btn-choice{
+  padding:18px;font-size:1rem;font-weight:700;border:none;border-radius:12px;
+  cursor:pointer;color:#fff;transition:transform .15s, opacity .2s;letter-spacing:.5px;
+}
+#viewQuiz .btn-choice:hover:not(:disabled){transform:translateY(-2px);}
+#viewQuiz .btn-choice:disabled{opacity:.4;cursor:not-allowed;}
+#viewQuiz .btn-fake{background:#ef4444;}
+#viewQuiz .btn-fact{background:#22c55e;}
+#viewQuiz .feedback{
+  margin-top:20px;padding:16px;border-radius:12px;font-size:.92rem;
+  line-height:1.5;display:none;animation:fadeIn .3s ease;
+}
+#viewQuiz .feedback.show{display:block;}
+#viewQuiz .feedback.correct{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);}
+#viewQuiz .feedback.wrong{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);}
+#viewQuiz .feedback .tag{font-weight:700;display:block;margin-bottom:6px;font-size:.95rem;}
+#viewQuiz .feedback.correct .tag{color:#22c55e;}
+#viewQuiz .feedback.wrong .tag{color:#ef4444;}
+#viewQuiz .feedback .explain{color:#94a3b8;}
+#viewQuiz .btn-next{
+  margin-top:16px;width:100%;padding:16px;font-size:1rem;font-weight:700;
+  border:none;border-radius:12px;background:#38bdf8;color:#0f172a;
+  cursor:pointer;display:none;transition:opacity .2s;
+}
+#viewQuiz .btn-next.show{display:block;}
+#viewQuiz .btn-next:hover{opacity:.85;}
+#viewQuiz .start-screen{text-align:center;padding:20px 8px 8px;}
+#viewQuiz .start-screen h2{font-size:1.6rem;margin-bottom:12px;}
+#viewQuiz .start-screen p{color:#94a3b8;line-height:1.6;margin-bottom:24px;}
+#viewQuiz .btn-start{
+  padding:16px 40px;font-size:1.05rem;font-weight:700;
+  background:#38bdf8;color:#0f172a;border:none;border-radius:12px;cursor:pointer;
+}
+#viewQuiz .btn-start:hover{opacity:.85;}
+#viewQuiz .result-screen{text-align:center;padding:10px 0;}
+#viewQuiz .result-screen h2{font-size:1.4rem;margin-bottom:12px;}
+#viewQuiz .result-screen .score{
+  font-size:3.5rem;font-weight:800;color:#38bdf8;line-height:1;margin:16px 0;
+}
+#viewQuiz .result-screen .score small{font-size:1.2rem;color:#94a3b8;font-weight:600;}
+#viewQuiz .result-screen .msg{color:#94a3b8;line-height:1.6;margin-bottom:24px;padding:0 12px;}
+#viewQuiz .tips{
+  background:#334155;border-radius:12px;padding:16px 20px;text-align:left;
+  font-size:.85rem;line-height:1.7;color:#f1f5f9;margin-bottom:20px;
+}
+#viewQuiz .tips strong{color:#38bdf8;display:block;margin-bottom:8px;}
+#viewQuiz .tips ol{padding-left:18px;}
+#viewQuiz .btn-restart{
+  padding:14px 32px;font-size:.95rem;font-weight:700;background:transparent;
+  color:#38bdf8;border:2px solid #38bdf8;border-radius:12px;cursor:pointer;
+}
+#viewQuiz .btn-restart:hover{background:rgba(56,189,248,.1);}
+#viewQuiz .hidden{display:none;}
+@media(max-width:420px){
+  #viewQuiz .statement{font-size:1.02rem;min-height:70px;}
+  #viewQuiz .btn-choice{padding:15px;font-size:.92rem;}
+  #viewQuiz .content{padding:22px 18px 26px;}
+}
+
+/* ============================================================
+   ==================== VIEW: MANCHETES ========================
+   ============================================================ */
+#viewManchetes{max-width:1000px;margin:0 auto;}
+#viewManchetes header{text-align:center;margin-bottom:32px;}
+#viewManchetes header h1{font-size:1.8rem;color:#38bdf8;margin-bottom:6px;}
+#viewManchetes header p{color:#94a3b8;font-size:.95rem;}
+#viewManchetes .intro{
+  background:#1e293b;border-radius:16px;padding:20px 24px;margin-bottom:28px;
+  font-size:.95rem;color:#f1f5f9;border-left:4px solid #38bdf8;
+}
+#viewManchetes h2{font-size:1.25rem;margin-bottom:16px;color:#f1f5f9;display:flex;align-items:center;gap:8px;}
+#viewManchetes h2 .num{
+  background:#38bdf8;color:#0f172a;width:28px;height:28px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:.9rem;font-weight:800;
+}
+#viewManchetes section{margin-bottom:40px;}
+#viewManchetes .two-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+#viewManchetes .col{background:#1e293b;border-radius:16px;padding:20px 22px;}
+#viewManchetes .col.fake-col{border-top:4px solid #ef4444;}
+#viewManchetes .col.real-col{border-top:4px solid #22c55e;}
+#viewManchetes .col h3{
+  font-size:1rem;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #334155;
+}
+#viewManchetes .col.fake-col h3{color:#ef4444;}
+#viewManchetes .col.real-col h3{color:#22c55e;}
+#viewManchetes .col ul{list-style:none;}
+#viewManchetes .col li{
+  font-size:.88rem;padding:7px 0 7px 22px;position:relative;color:#f1f5f9;
+  border-bottom:1px dashed rgba(148,163,184,.15);
+}
+#viewManchetes .col li:last-child{border-bottom:none;}
+#viewManchetes .col.fake-col li::before{
+  content:'⚠';position:absolute;left:0;top:7px;color:#ef4444;font-size:.85rem;
+}
+#viewManchetes .col.real-col li::before{
+  content:'✓';position:absolute;left:0;top:7px;color:#22c55e;font-weight:800;font-size:.85rem;
+}
+#viewManchetes .pair{
+  margin-bottom:28px;background:#1e293b;border-radius:16px;padding:20px;
+}
+#viewManchetes .pair-title{
+  font-size:1rem;color:#38bdf8;margin-bottom:16px;text-transform:uppercase;
+  letter-spacing:.5px;font-weight:700;
+}
+#viewManchetes .pair-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+#viewManchetes .headline-card{
+  border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;
+}
+#viewManchetes .headline-card.fake{
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);
+}
+#viewManchetes .headline-card.real{
+  background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);
+}
+#viewManchetes .badge{
+  align-self:flex-start;font-size:.7rem;font-weight:800;letter-spacing:1px;
+  padding:5px 10px;border-radius:999px;color:#fff;
+}
+#viewManchetes .headline-card.fake .badge{background:#ef4444;}
+#viewManchetes .headline-card.real .badge{background:#22c55e;}
+#viewManchetes .headline{font-size:1rem;font-weight:700;line-height:1.45;color:#f1f5f9;}
+#viewManchetes .toggle-btn{
+  align-self:flex-start;background:transparent;border:none;color:#38bdf8;
+  font-size:.82rem;font-weight:700;cursor:pointer;padding:4px 0;margin-top:auto;
+}
+#viewManchetes .toggle-btn:hover{text-decoration:underline;}
+#viewManchetes .tells{
+  list-style:none;display:none;margin-top:4px;padding-top:10px;
+  border-top:1px dashed rgba(148,163,184,.3);
+}
+#viewManchetes .tells.show{display:block;animation:fadeIn .25s ease;}
+#viewManchetes .tells li{
+  font-size:.82rem;padding:5px 0 5px 20px;position:relative;color:#f1f5f9;
+}
+#viewManchetes .headline-card.fake .tells li::before{
+  content:'⚠';position:absolute;left:0;color:#ef4444;
+}
+#viewManchetes .headline-card.real .tells li::before{
+  content:'✓';position:absolute;left:0;color:#22c55e;font-weight:800;
+}
+#viewManchetes .reveal-all{text-align:center;margin:8px 0 28px;}
+#viewManchetes .reveal-all button{
+  padding:12px 28px;background:#38bdf8;color:#0f172a;border:none;
+  border-radius:10px;font-weight:700;font-size:.9rem;cursor:pointer;
+}
+#viewManchetes .reveal-all button:hover{opacity:.85;}
+#viewManchetes .checklist{
+  background:#1e293b;border-radius:16px;padding:24px;border-left:4px solid #22c55e;
+}
+#viewManchetes .checklist ul{list-style:none;margin-top:12px;}
+#viewManchetes .checklist li{
+  font-size:.92rem;padding:8px 0 8px 26px;position:relative;color:#f1f5f9;
+}
+#viewManchetes .checklist li::before{
+  content:'✓';position:absolute;left:0;color:#22c55e;font-weight:800;
+}
+#viewManchetes .footer-note{text-align:center;margin-top:40px;color:#94a3b8;font-size:.85rem;}
+@media(max-width:720px){
+  #viewManchetes .two-cols,
+  #viewManchetes .pair-cards{grid-template-columns:1fr;}
+  #viewManchetes header h1{font-size:1.4rem;}
+}
+
+/* ============================================================
+   ==================== VIEW: NOTÍCIAS =========================
+   ============================================================ */
+#viewNoticias{
+  --n-bg:#f5f2ec;--n-card:#fff;--n-text:#1a1a1a;--n-muted:#6b6b6b;
+  --n-red:#c8102e;--n-green:#1a7f37;--n-green-soft:#e8f5ec;
+  --n-border:#e0ddd5;--n-serif:Georgia,'Times New Roman',serif;
+  max-width:1200px;margin:0 auto;color:var(--n-text);
+}
+#viewNoticias.dark{
+  --n-bg:#0f172a;--n-card:#1e293b;--n-text:#f1f5f9;--n-muted:#94a3b8;
+  --n-red:#ef4444;--n-green:#22c55e;--n-green-soft:rgba(34,197,94,.15);
+  --n-border:#334155;
+}
+#viewNoticias .ticker{
+  background:var(--n-red);color:#fff;padding:8px 0;overflow:hidden;
+  white-space:nowrap;font-size:.82rem;font-weight:700;letter-spacing:.5px;
+  border-radius:6px;margin-bottom:18px;
+}
+#viewNoticias .ticker span{display:inline-block;padding-left:100%;animation:ticker 35s linear infinite;}
+@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-100%);}}
+#viewNoticias .masthead{background:var(--n-card);border-bottom:4px solid var(--n-text);padding:18px 24px 0;border-radius:8px 8px 0 0;}
+#viewNoticias .masthead-top{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.72rem;color:var(--n-muted);padding-bottom:10px;
+  border-bottom:1px solid var(--n-border);flex-wrap:wrap;gap:8px;
+}
+#viewNoticias .masthead-top .breaking{
+  color:var(--n-red);font-weight:800;text-transform:uppercase;letter-spacing:1px;
+}
+#viewNoticias .logo-area{text-align:center;padding:22px 0 16px;border-bottom:1px solid var(--n-border);}
+#viewNoticias .logo{
+  font-family:var(--n-serif);font-size:clamp(2.2rem,8vw,4rem);
+  font-weight:900;letter-spacing:-2px;line-height:1;
+}
+#viewNoticias .logo .red{color:var(--n-red);}
+#viewNoticias .tagline{font-size:.82rem;color:var(--n-muted);margin-top:8px;font-style:italic;}
+#viewNoticias .nav{
+  display:flex;gap:4px;padding:12px 0;overflow-x:auto;justify-content:center;flex-wrap:wrap;
+}
+#viewNoticias .nav a{
+  color:var(--n-text);text-decoration:none;font-size:.75rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;padding:4px 10px;border-radius:4px;
+}
+#viewNoticias .section-bar{
+  background:var(--n-card);padding:20px 24px;margin:24px 0 20px;border-radius:8px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;border-left:4px solid var(--n-red);
+}
+#viewNoticias .section-bar h2{font-family:var(--n-serif);font-size:1.4rem;font-weight:800;}
+#viewNoticias .section-bar .instruction{font-size:.82rem;color:var(--n-muted);font-style:italic;}
+#viewNoticias .counter-bar{
+  background:var(--n-text);color:var(--n-bg);padding:14px 20px;border-radius:8px;
+  font-size:.88rem;font-weight:700;margin-bottom:22px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+}
+#viewNoticias.dark .counter-bar{background:#f1f5f9;color:#0f172a;}
+#viewNoticias .counter-bar strong{color:#c8102e;}
+#viewNoticias.dark .counter-bar strong{color:#ef4444;}
+#viewNoticias .reveal-all-btn{
+  background:var(--n-red);color:#fff;border:none;padding:9px 16px;border-radius:6px;
+  font-size:.76rem;font-weight:800;cursor:pointer;text-transform:uppercase;
+  letter-spacing:.5px;transition:all .2s;white-space:nowrap;
+}
+#viewNoticias .reveal-all-btn:hover:not(:disabled){background:#ef4444;transform:translateY(-1px);}
+#viewNoticias .reveal-all-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+#viewNoticias .news-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:24px;
+}
+#viewNoticias .news-card{
+  background:var(--n-card);border-radius:12px;overflow:hidden;
+  box-shadow:0 2px 12px rgba(0,0,0,.06);display:flex;flex-direction:column;
+  transition:box-shadow .3s;position:relative;
+}
+#viewNoticias.dark .news-card{box-shadow:0 2px 12px rgba(0,0,0,.4);}
+#viewNoticias .news-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.1);}
+#viewNoticias .thumb{
+  height:140px;display:flex;align-items:center;justify-content:center;
+  font-size:3.5rem;position:relative;
+}
+#viewNoticias .thumb::after{
+  content:'NOTÍCIA VERIFICADA';position:absolute;bottom:8px;right:8px;
+  font-size:.58rem;background:rgba(0,0,0,.5);color:#fff;padding:3px 8px;
+  border-radius:3px;letter-spacing:.5px;font-weight:700;
+}
+#viewNoticias .thumb-1{background:linear-gradient(135deg,#8b4513,#d2691e);}
+#viewNoticias .thumb-2{background:linear-gradient(135deg,#2d5016,#6b8e23);}
+#viewNoticias .thumb-3{background:linear-gradient(135deg,#4a1c40,#8b1a5e);}
+#viewNoticias .thumb-4{background:linear-gradient(135deg,#1a1a4a,#3d3d8f);}
+#viewNoticias .thumb-5{background:linear-gradient(135deg,#0a4a4a,#1a8f8f);}
+#viewNoticias .thumb-6{background:linear-gradient(135deg,#4a2a0a,#8f5a1a);}
+#viewNoticias .thumb-7{background:linear-gradient(135deg,#4a0a0a,#8f1a1a);}
+#viewNoticias .thumb-8{background:linear-gradient(135deg,#2a2a4a,#5a5a8f);}
+#viewNoticias .thumb-9{background:linear-gradient(135deg,#3a2a0a,#7a5a1a);}
+#viewNoticias .thumb-10{background:linear-gradient(135deg,#1a3a1a,#4a7a4a);}
+#viewNoticias .card-body{
+  padding:18px 20px 20px;display:flex;flex-direction:column;gap:10px;flex:1;
+}
+#viewNoticias .category{
+  font-size:.68rem;font-weight:800;color:var(--n-red);
+  text-transform:uppercase;letter-spacing:1px;
+}
+#viewNoticias .fake-headline{
+  font-family:var(--n-serif);font-size:1.12rem;font-weight:800;
+  line-height:1.3;transition:all .3s;
+}
+#viewNoticias .excerpt{font-size:.84rem;color:var(--n-muted);line-height:1.5;}
+#viewNoticias .meta{
+  font-size:.7rem;color:var(--n-muted);padding-top:6px;
+  border-top:1px solid var(--n-border);display:flex;
+  justify-content:space-between;flex-wrap:wrap;gap:4px;
+}
+#viewNoticias .reveal-btn{
+  background:var(--n-text);color:var(--n-card);border:none;padding:12px 18px;
+  font-size:.82rem;font-weight:800;border-radius:6px;cursor:pointer;
+  letter-spacing:.5px;text-transform:uppercase;transition:all .2s;margin-top:4px;
+}
+#viewNoticias .reveal-btn:hover{background:var(--n-red);color:#fff;}
+#viewNoticias.dark .reveal-btn{background:#f1f5f9;color:#0f172a;}
+#viewNoticias.dark .reveal-btn:hover{background:#ef4444;color:#fff;}
+#viewNoticias .news-card.revealed .fake-headline{
+  text-decoration:line-through;color:var(--n-muted);opacity:.55;
+}
+#viewNoticias .news-card.revealed .reveal-btn{display:none;}
+#viewNoticias .fake-stamp{
+  position:absolute;top:12px;left:12px;background:var(--n-red);color:#fff;
+  font-size:.68rem;font-weight:900;padding:6px 12px;border-radius:4px;
+  letter-spacing:1px;transform:rotate(-8deg);box-shadow:0 2px 8px rgba(0,0,0,.3);
+  opacity:0;transition:opacity .4s;z-index:5;
+}
+#viewNoticias .news-card.revealed .fake-stamp{opacity:1;}
+#viewNoticias .real-section{
+  max-height:0;overflow:hidden;transition:max-height .6s ease;
+  border-top:3px solid var(--n-green);
+}
+#viewNoticias .news-card.revealed .real-section{
+  max-height:1500px;margin-top:10px;padding-top:14px;
+}
+#viewNoticias .real-label{
+  font-size:.68rem;font-weight:800;color:var(--n-green);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;
+}
+#viewNoticias .real-headline{
+  font-family:var(--n-serif);font-size:1.02rem;font-weight:800;
+  line-height:1.3;color:var(--n-green);margin-bottom:8px;
+}
+#viewNoticias .real-source{
+  font-size:.73rem;color:var(--n-muted);font-style:italic;
+  margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed var(--n-border);
+}
+#viewNoticias .tells-title{
+  font-size:.7rem;font-weight:800;color:var(--n-red);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;
+}
+#viewNoticias .tells-list{list-style:none;margin-bottom:12px;}
+#viewNoticias .tells-list li{
+  font-size:.76rem;padding:4px 0 4px 18px;position:relative;line-height:1.4;
+}
+#viewNoticias .tells-list li::before{content:'⚠';position:absolute;left:0;color:var(--n-red);}
+#viewNoticias .truth-title{
+  font-size:.7rem;font-weight:800;color:var(--n-green);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;
+}
+#viewNoticias .truth-text{
+  font-size:.8rem;line-height:1.5;background:var(--n-green-soft);
+  padding:10px 12px;border-radius:6px;
+}
+#viewNoticias .final-message{
+  max-width:800px;margin:40px auto 0;background:var(--n-text);color:var(--n-bg);
+  padding:32px;border-radius:12px;text-align:center;display:none;
+}
+#viewNoticias.dark .final-message{background:#f1f5f9;color:#0f172a;}
+#viewNoticias .final-message.show{display:block;animation:fadeIn .6s;}
+#viewNoticias .final-message h2{font-family:var(--n-serif);font-size:1.6rem;margin-bottom:12px;}
+#viewNoticias .final-message p{font-size:.92rem;line-height:1.6;opacity:.85;margin-bottom:10px;}
+#viewNoticias .final-message .highlight{color:#c8102e;font-weight:700;}
+#viewNoticias.dark .final-message .highlight{color:#c8102e;}
+#viewNoticias .final-message .back-btn{
+  display:inline-block;margin-top:14px;padding:12px 26px;background:var(--n-red);
+  color:#fff;text-decoration:none;border-radius:6px;font-weight:800;
+  font-size:.85rem;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;border:none;
+}
+#viewNoticias .final-message .back-btn:hover{opacity:.85;}
+#viewNoticias .theme-toggle{
+  background:transparent;border:2px solid var(--n-text);color:var(--n-text);
+  width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1rem;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:all .25s;flex-shrink:0;
+}
+#viewNoticias .theme-toggle:hover{background:var(--n-text);color:var(--n-card);transform:rotate(15deg);}
+@media(max-width:600px){
+  #viewNoticias .masthead{padding:16px 14px 0;}
+  #viewNoticias .news-grid{grid-template-columns:1fr;}
+  #viewNoticias .section-bar{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body class="view-quiz">
+
+<!-- NAV -->
+<nav class="top-nav">
+  <a id="navQuiz" class="active" onclick="switchView('quiz')">🔍 Quiz</a>
+  <a id="navManchetes" onclick="switchView('manchetes')">📰 Manchetes</a>
+  <a id="navNoticias" onclick="switchView('noticias')">🚨 Notícias</a>
+</nav>
+
+<!-- ============================================================
+     VIEW: QUIZ
+     ============================================================ -->
+<section id="viewQuiz" class="view active">
+  <div class="container">
+    <div class="header">
+      <h1>🔍 Fake ou Fato?</h1>
+      <p>Quiz do seminário — Fake News: da Antiguidade à Internet</p>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+    <div class="content start-screen" id="startScreen">
+      <h2>Você consegue identificar<br>uma fake news?</h2>
+      <p>Vamos ver 10 afirmações baseadas na história da desinformação.<br>
+      Para cada uma, escolha se ela é <strong style="color:#ef4444">Fake</strong>
+      ou <strong style="color:#22c55e">Fato</strong>. Boa sorte!</p>
+      <button class="btn-start" onclick="startQuiz()">Começar o quiz</button>
+    </div>
+
+    <div class="content hidden" id="quizScreen">
+      <div class="counter" id="counter">Pergunta 1 de 10</div>
+      <div class="statement" id="statement"></div>
+      <div class="buttons">
+        <button class="btn-choice btn-fake" id="btnFake" onclick="answer('fake')">FAKE</button>
+        <button class="btn-choice btn-fact" id="btnFact" onclick="answer('fato')">FATO</button>
+      </div>
+      <div class="feedback" id="feedback">
+        <span class="tag" id="feedbackTag"></span>
+        <span class="explain" id="feedbackExplain"></span>
+      </div>
+      <button class="btn-next" id="btnNext" onclick="nextQuestion()">Próxima pergunta →</button>
+    </div>
+
+    <div class="content hidden" id="resultScreen">
+      <div class="result-screen">
+        <h2 id="resultTitle">Resultado</h2>
+        <div class="score"><span id="scoreValue">0</span><small>/10</small></div>
+        <p class="msg" id="resultMsg"></p>
+        <div class="tips">
+          <strong>Antes de compartilhar, pergunte-se:</strong>
+          <ol>
+            <li>Quem criou essa informação?</li>
+            <li>Existem provas que confirmam o que está sendo dito?</li>
+            <li>Qual é a intenção de quem publicou?</li>
+            <li>Para qual público essa informação foi criada?</li>
+            <li>A apresentação tenta provocar alguma emoção?</li>
+            <li>Qual é o contexto completo dessa informação?</li>
+          </ol>
+        </div>
+        <button class="btn-restart" onclick="restartQuiz()">Jogar novamente</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     VIEW: MANCHETES
+     ============================================================ -->
+<section id="viewManchetes" class="view">
+  <header>
+    <h1>🔍 Fake vs. Real</h1>
+    <p>A anatomia de uma manchete — como reconhecer os sinais</p>
+  </header>
+
+  <div class="intro">
+    Nem toda notícia é verdadeira — e nem toda notícia é falsa. A diferença está nos detalhes:
+    o tom, as fontes, os dados, a intenção. Compare os exemplos abaixo e aprenda a reconhecer os sinais.
+  </div>
+
+  <section>
+    <h2><span class="num">1</span> Anatomia da manchete</h2>
+    <div class="two-cols">
+      <div class="col fake-col">
+        <h3>🚨 Sinais de uma manchete FAKE</h3>
+        <ul>
+          <li>CAIXA ALTA e exclamações!!!</li>
+          <li>Palavras sensacionalistas: URGENTE, BOMBA, EXPOSTO, VERDADE REVELADA</li>
+          <li>Emojis de alerta 🚨😱🔥 em excesso</li>
+          <li>"A mídia esconde", "governo não quer que você saiba"</li>
+          <li>Fonte vaga: "cientistas dizem", "especialistas afirmam", "médico revela"</li>
+          <li>Apelo emocional (medo, raiva, indignação)</li>
+          <li>Acusações sem evidência apresentada</li>
+          <li>Datas vagas ("recentemente", "esta semana")</li>
+          <li>Pedido para compartilhar antes de verificar</li>
+        </ul>
+      </div>
+      <div class="col real-col">
+        <h3>✅ Sinais de uma manchete REAL</h3>
+        <ul>
+          <li>Tom neutro e informativo</li>
+          <li>Dados específicos: números, datas, locais</li>
+          <li>Fonte nomeada: instituição, pesquisador, jornalista</li>
+          <li>Atribuição clara: "segundo", "de acordo com"</li>
+          <li>Contexto no próprio título</li>
+          <li>Sem apelo emocional excessivo</li>
+          <li>Verificável: dá para buscar a fonte</li>
+          <li>Separa fato de opinião</li>
+          <li>Sem urgência artificial para compartilhar</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">2</span> Compare os exemplos</h2>
+    <div class="reveal-all">
+      <button onclick="revealAllManchetes(this)">Revelar todas as características</button>
+    </div>
+
+    <!-- Par 1 -->
+    <div class="pair">
+      <div class="pair-title">💉 Saúde — Vacinas</div>
+      <div class="pair-cards">
+        <div class="headline-card fake">
+          <span class="badge">🚨 FAKE</span>
+          <p class="headline">"URGENTE: Médico revela que vacina tríplice viral CAUSA AUTISMO e a mídia está escondendo de você!"</p>
+          <button class="toggle-btn" onclick="toggleTells(this)">Ver características ▼</button>
+          <ul class="tells">
+            <li>"URGENTE" + emoji de alerta: tenta criar pânico</li>
+            <li>"CAUSA AUTISMO" em caixa alta: apelo emocional</li>
+            <li>"a mídia está escondendo": teoria da conspiração</li>
+            <li>"Médico" sem nome: fonte vaga, não verificável</li>
+            <li>Exclamação: sensacionalismo</li>
+            <li>Promete "revelação" sem apresentar evidência</li>
+          </ul>
+        </div>
+        <div class="headline-card real">
+          <span class="badge">✅ REAL</span>
+          <p class="headline">"Estudo com 657 mil crianças dinamarquesas não encontra relação entre vacina tríplice viral e autismo"</p>
+          <button class="toggle-btn" onclick="toggleTells(this)">Ver características ▼</button>
+          <ul class="tells">
+            <li>Dado específico: 657 mil crianças</li>
+            <li>Origem identificável: estudo dinamarquês</li>
+            <li>Afirmação clara e mensurável</li>
+            <li>Tom neutro, sem adjetivos</li>
+            <li>Verificável: publicado em revista científica</li>
+            <li>Contexto completo no próprio título</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Par 2 -->
+    <div class="pair">
+      <div class="pair-title">🏛️ História Antiga — Nero e o incêndio de Roma</div>
+      <div class="pair-cards">
+        <div class="headline-card fake">
+          <span class="badge">🚨 FAKE</span>
+          <p class="headline">"VERDADE CHOCANTE: Nero NÃO incendiou Roma! Documento secreto prova que cristãos armaram tudo!"</p>
+          <button class="toggle-btn" onclick="toggleTells(this)">Ver características ▼</button>
+          <ul class="tells">
+            <li>"VERDADE CHOCANTE": sensacionalismo</li>
+            <li>"NÃO" em caixa alta: ênfase emocional</li>
+            <li>"Documento secreto": fonte que não pode ser verificada</li>
+            <li>Acusação sem apresentar a fonte</li>
+            <li>Exclamações em excesso</li>
+          </ul>
+        </div>
+        <div class="headline-card real">
+          <span class="badge">✅ REAL</span>
+          <p class="headline">"Tácito descreve em 'Anais' como Nero responsabilizou cristãos pelo incêndio de Roma em 64 d.C."</p>
+          <button class="toggle-btn" onclick="toggleTells(this)">Ver características ▼</button>
+          <ul class="tells">
+            <li>Fonte nomeada: Tácito, obra "Anais"</li>
+            <li>Data específica: 64 d.C.</li>
+            <li>Atribuição clara: "descreve"</li>
+            <li>Contexto no título</li>
+            <li>Sem adjetivos sensacionalistas</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Par 3 -->
+    <div class="pair">
+      <div class="pair-title">🦠 Idade Média — Peste Negra</div>
+      <div class="pair-cards">
+        <div class="headline-card fake">
+          <span class="badge">🚨 FAKE</span>
+          <p class="headline">"CONFIRMADO: Judeus envenenaram poços durante a Peste Negra — historiadores escondem a verdade!"</p>
+          <button class="toggle-btn" onclick="toggleTells(this)">Ver características ▼</button>
+          <ul class="tells">
+            <li>"CONFIRMADO" sem evidência</li>
+            <li>"historiadores escondem": teoria da conspiração</li>
+            <li>Generalização: "Judeus" (sem especificar)</li>
+            <li>Apelo ao preconceito</li>
+            <li>Exclamação</li>
+          </ul>
+        </div>
+        <div class="headline-card real">
+          <span class="badge">✅ REAL</span>
+          <p class="headline">"Peste Negra: por que comunidades judaicas foram acusadas injustamente de envenenar poços no século XIV"</p>
+          <button class="toggle-btn" onclick="toggleTells(this)">Ver características ▼</button>
+          <ul class="tells">
+            <li>Contextualiza: "século XIV"</li>
+            <li>"injustamente" com base histórica</li>
+            <li>Pergunta explicativa: "por que"</li>
+            <li>Foco na explicação, não na acusação</li>
+            <li>Tom analítico e educativo</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Par 4 -->
+    <div class="pair">
+      <div class="pair-title">📱 Contemporâneo — Algoritmos e redes sociais</div>
+      <div class="pair-cards">
+        <div class="headline-card fake">
+          <span class="badge">🚨 FAKE</span>
+          <p class="headline">"EXPOSTO! Algoritmo do Instagram foi PROGRAMADO para viciar e deprimir jovens — engenheiro confessa tudo!"</p>
+          <button class="toggle-btn" onclick="toggleTells(this)">Ver características ▼</button>
+          <ul class="tells">
+            <li>"EXPOSTO": sensacionalismo</li>
+            <li>"PROGRAMADO": afirmação sem evidência</li>
+            <li>"engenheiro confessa tudo": fonte anônima</li>
+            <li>Apelo emocional: "viciar e deprimir"</li>
+            <li>Exclamação</li>
+          </ul>
+        </div>
+        <div class="headline-card real">
+          <span class="badge">✅ REAL</span>
+          <p class="headline">"Pesquisadores explicam como algoritmos de recomendação priorizam conteúdos que geram engajamento"</p>
+          <button class="toggle-btn" onclick="toggleTells(this)">Ver características ▼</button>
+          <ul class="tells">
+            <li>Fonte identificável: "pesquisadores"</li>
+            <li>Tom educativo: "explicam"</li>
+            <li>Foco no mecanismo, não no escândalo</li>
+            <li>Sem adjetivos emocionais</li>
+            <li>Verificável: pesquisa publicada</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">3</span> Checklist rápida</h2>
+    <div class="checklist">
+      <p style="color:#94a3b8;font-size:.9rem;">Antes de acreditar (ou compartilhar), pergunte-se:</p>
+      <ul>
+        <li>Quem criou essa informação? A fonte tem nome?</li>
+        <li>Existem provas que confirmam o que está sendo dito?</li>
+        <li>Qual é a intenção de quem publicou?</li>
+        <li>A linguagem tenta provocar medo, raiva ou indignação?</li>
+        <li>Há dados específicos (números, datas, locais) ou tudo é vago?</li>
+        <li>Consigo encontrar essa informação em outras fontes confiáveis?</li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="footer-note">Agora que você conhece os sinais, teste o que aprendeu no quiz! 🔍</p>
+</section>
+
+<!-- ============================================================
+     VIEW: NOTÍCIAS
+     ============================================================ -->
+<section id="viewNoticias" class="view">
+
+  <div class="ticker">
+    <span>🔴 URGENTE: Descoberta chocante muda tudo o que você sabia sobre a história • 🚨 Médicos escondem a verdade sobre vacinas • 😱 Documentos secretos revelam escândalo • ⚠️ O que a mídia não quer que você saiba • 🔥 Compartilhe antes que seja removido</span>
+  </div>
+
+  <div class="masthead">
+    <div class="masthead-top">
+      <span>Terça-feira, 3 de novembro de 2026</span>
+      <span class="breaking">● AO VIVO — PLANTÃO URGENTE</span>
+      <span style="display:flex;align-items:center;gap:12px;">
+        Edição nº 8.472 • Ano XII
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Alternar tema">🌙</button>
+      </span>
+    </div>
+    <div class="logo-area">
+      <div class="logo">URGENTE<span class="red">24H</span></div>
+      <p class="tagline">A notícia que a mídia tradicional não tem coragem de publicar</p>
+    </div>
+    <nav class="nav">
+      <a>Início</a><a>Brasil</a><a>Mundo</a><a>Saúde</a>
+      <a>História</a><a>Tecnologia</a><a>Ciência</a><a>Política</a>
+    </nav>
+  </div>
+
+  <div class="section-bar">
+    <h2>📰 Últimas notícias</h2>
+    <span class="instruction">Clique em "Verificar esta notícia" para revelar a verdade por trás de cada manchete</span>
+  </div>
+
+  <div class="counter-bar">
+    <span>Você já verificou <strong id="revealedCount">0</strong> de <strong>10</strong> notícias</span>
+    <button class="reveal-all-btn" id="revealAllBtn" onclick="revealAllNoticias()">⚡ Revelar todas</button>
+  </div>
+
+  <div class="news-grid" id="newsGrid">
+
+    <!-- 1 -->
+    <article class="news-card">
+      <div class="thumb thumb-1">🏛️</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">História Oculta</span>
+        <h3 class="fake-headline">NOVA DESCOBERTA: Nero era inocente! Documentos secretos provam que cristãos incendiaram Roma</h3>
+        <p class="excerpt">Historiadores independentes revelam a verdade que a mídia tradicional insiste em esconder há séculos.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Há 2 horas</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a história realmente diz</div>
+          <h4 class="real-headline">Tácito relata que Nero culpou cristãos pelo incêndio de Roma em 64 d.C. para desviar suspeitas</h4>
+          <div class="real-source">Fonte: Tácito, "Anais", Livro XV (século II d.C.)</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"Documentos secretos" sem identificar a fonte</li>
+            <li>"Historiadores independentes" sem nome ou instituição</li>
+            <li>"A mídia esconde" — apelo conspiratório clássico</li>
+            <li>Caixa alta e exclamação para gerar urgência artificial</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">Não há evidência de que cristãos tenham causado o incêndio. O imperador Nero os usou como bode expiatório para desviar suspeitas sobre si mesmo. As perseguições que se seguiram estão entre os primeiros exemplos documentados de desinformação usada para perseguir um grupo.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 2 -->
+    <article class="news-card">
+      <div class="thumb thumb-2">🦠</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">Idade Média</span>
+        <h3 class="fake-headline">CONFIRMADO POR HISTORIADORES: judeus envenenaram poços e causaram a Peste Negra na Europa</h3>
+        <p class="excerpt">Segundo documentos recém-descobertos, comunidades judaicas teriam sabotado fontes de água para contaminar cristãos.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Há 5 horas</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a história realmente diz</div>
+          <h4 class="real-headline">Peste Negra: como comunidades judaicas foram injustamente acusadas de envenenar poços no século XIV</h4>
+          <div class="real-source">Fonte: Registros históricos do século XIV; historiadores contemporâneos</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"CONFIRMADO" sem apresentar fonte ou documento</li>
+            <li>Generalização: "judeus" sem especificar grupo ou época</li>
+            <li>"Documentos recém-descobertos" sem nome ou localização</li>
+            <li>Apelo direto ao preconceito religioso</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">A doença era causada pela bactéria Yersinia pestis, transmitida por pulgas de ratos. As acusações eram completamente falsas e serviram para culpar uma minoria por uma epidemia de origem desconhecida. Resultaram em massacres e expulsões de comunidades judaicas.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 3 -->
+    <article class="news-card">
+      <div class="thumb thumb-3">🧙‍♀️</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">Inquisição</span>
+        <h3 class="fake-headline">CONFISSÃO REVELADORA: bruxas admitem pacto com demônios e voos em vassouras durante a Inquisição</h3>
+        <p class="excerpt">Transcrições de julgamentos revelam os segredos sombrios das práticas de bruxaria na Europa.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Ontem</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a história realmente diz</div>
+          <h4 class="real-headline">Inquisição: confissões de bruxaria eram obtidas sob tortura e não tinham validade factual</h4>
+          <div class="real-source">Fonte: Registros de tribunais inquisitoriais; historiadores como Carlo Ginzburg</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"Confissão" sem mencionar que era obtida sob tortura</li>
+            <li>"Segredos sombrios" — sensacionalismo mórbido</li>
+            <li>"Reveladora" — apelo à curiosidade sem base</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">As "confissões" eram extraídas sob tortura e não tinham validade factual. Estima-se que entre 40 mil e 60 mil pessoas foram executadas por acusações de bruxaria na Europa entre os séculos XV e XVII. A maioria das vítimas era de mulheres.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 4 -->
+    <article class="news-card">
+      <div class="thumb thumb-4">🌙</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">Ciência</span>
+        <h3 class="fake-headline">DESCOBERTA BOMBÁSTICA: vida inteligente na Lua! Veja as imagens EXCLUSIVAS dos seres alados</h3>
+        <p class="excerpt">Astrônomos confirmam: criaturas humanoides com asas habitam a superfície lunar.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Há 1 dia</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a história realmente diz</div>
+          <h4 class="real-headline">Em 1835, o New York Sun publicou a "Grande Fraude da Lua" — reportagens inventadas para vender jornais</h4>
+          <div class="real-source">Fonte: New York Sun (1835); posteriormente desmentido pelo próprio jornal</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"Bombástica" e "exclusivas" — sensacionalismo puro</li>
+            <li>"Astrônomos confirmam" sem nome ou instituição</li>
+            <li>"Veja as imagens" — apelo visual em vez de evidência</li>
+            <li>Ciência feita por imagem, não por dados verificáveis</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">As reportagens descreviam seres humanoides com asas. Era tudo ficção, criada para aumentar a circulação do jornal. Ficou conhecida como "A Grande Fraude da Lua" e é um dos primeiros casos documentados de desinformação com fins comerciais.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 5 -->
+    <article class="news-card">
+      <div class="thumb thumb-5">💉</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">Saúde</span>
+        <h3 class="fake-headline">URGENTE: médico revela que vacina tríplice viral CAUSA AUTISMO e a mídia esconde de você</h3>
+        <p class="excerpt">Estudo polêmico que foi abafado pela comunidade científica expõe os perigos da vacinação infantil.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Há 3 horas</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a ciência realmente diz</div>
+          <h4 class="real-headline">Estudo de 2019 com 657 mil crianças confirma: não há relação entre vacina tríplice viral e autismo</h4>
+          <div class="real-source">Fonte: Annals of Internal Medicine (2019); estudo original de Wakefield retirado pela The Lancet em 2010</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"Médico" sem nome — fonte vaga, não verificável</li>
+            <li>"A mídia esconde" — teoria da conspiração</li>
+            <li>"CAUSA AUTISMO" em caixa alta — apelo emocional</li>
+            <li>"Abafado" — sugere censura sem provas</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">O estudo de Andrew Wakefield (1998) foi retirado por falhas éticas e metodológicas. Ele perdeu a licença médica no Reino Unido. Diversos estudos posteriores, com milhões de crianças, não encontraram relação entre a vacina e o autismo.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 6 -->
+    <article class="news-card">
+      <div class="thumb thumb-6">📱</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">Tecnologia</span>
+        <h3 class="fake-headline">EXPOSTO! Algoritmo do Instagram foi PROGRAMADO para viciar e deprimir jovens — engenheiro confessa tudo</h3>
+        <p class="excerpt">Ex-funcionário revela os bastidores sombrios das redes sociais e o plano secreto para manipular usuários.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Há 6 horas</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a pesquisa realmente diz</div>
+          <h4 class="real-headline">Como algoritmos de recomendação priorizam conteúdos que geram engajamento — e por que isso importa</h4>
+          <div class="real-source">Fonte: Pesquisas em ciência da computação; documentação das plataformas</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"EXPOSTO" — sensacionalismo</li>
+            <li>"PROGRAMADO" sem evidência técnica</li>
+            <li>"Engenheiro confessa" — fonte anônima</li>
+            <li>"Plano secreto" — narrativa conspiratória</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">Algoritmos otimizam para engajamento, o que pode amplificar conteúdos emocionalmente carregados. Mas não foram "programados para deprimir" — essa é uma simplificação sensacionalista de um problema complexo que envolve design, métricas e escolhas comerciais.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 7 -->
+    <article class="news-card">
+      <div class="thumb thumb-7">🍖</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">Roma Antiga</span>
+        <h3 class="fake-headline">SEGREDO SOMBRIO: primeiros cristãos praticavam canibalismo ritual, revelam manuscritos antigos</h3>
+        <p class="excerpt">Documentos da época revelam práticas chocantes escondidas pela Igreja durante séculos.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Há 8 horas</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a história realmente diz</div>
+          <h4 class="real-headline">Por que os primeiros cristãos foram acusados de canibalismo? Entenda o mal-entendido sobre a Eucaristia</h4>
+          <div class="real-source">Fonte: Registros de apologetas cristãos como Justino de Roma (século II)</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"Segredo sombrio" — apelo ao mórbido</li>
+            <li>"Manuscritos antigos" sem especificar quais</li>
+            <li>"Escondidas pela Igreja" — narrativa conspiratória</li>
+            <li>Acusação grave sem apresentar evidência</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">A ideia de "comer o corpo de Cristo" foi mal interpretada por quem estava fora da comunidade cristã. As acusações eram infundadas e serviram para justificar perseguições no Império Romano — um exemplo antigo de como o mal-entendido pode virar fake news.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 8 -->
+    <article class="news-card">
+      <div class="thumb thumb-8">💻</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">Sociedade</span>
+        <h3 class="fake-headline">ESPECIALISTAS CONFIRMAM: fake news são invenção da internet e não existiam antes dos anos 2000</h3>
+        <p class="excerpt">Pesquisadores alertam: geração criada nas redes sociais é a primeira a conviver com a desinformação.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Há 12 horas</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a história realmente diz</div>
+          <h4 class="real-headline">Fake news não nasceram com a internet: desinformação existe desde a Antiguidade</h4>
+          <div class="real-source">Fonte: Historiadores da comunicação; casos documentados desde Roma Antiga</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"Especialistas" sem nome ou instituição</li>
+            <li>"CONFIRMAM" sem apresentar fonte</li>
+            <li>Afirmação absoluta sem nuance histórica</li>
+            <li>Simplificação: confunde "alcance" com "existência"</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">A desinformação existe há milênios — de Nero aos panfletos da Revolução Francesa. A internet não criou as fake news, apenas aumentou sua velocidade, alcance e influência. A diferença é quantitativa, não qualitativa.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 9 -->
+    <article class="news-card">
+      <div class="thumb thumb-9">💀</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">Idade Média</span>
+        <h3 class="fake-headline">REVELADO: Peste Negra matou 90% da Europa! Números REAIS que a história não conta</h3>
+        <p class="excerpt">Novas estimativas chocantes revelam que a pandemia medieval foi muito pior do que se pensava.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Há 1 dia</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a história realmente diz</div>
+          <h4 class="real-headline">Peste Negra matou entre 1/3 e 1/2 da população europeia no século XIV, estimam historiadores</h4>
+          <div class="real-source">Fonte: Estudos demográficos históricos (ex.: Ole Benedictow)</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"REVELADO" — sensacionalismo</li>
+            <li>"90%" — número exagerado sem base histórica</li>
+            <li>"Números REAIS" sem citar a fonte dos números</li>
+            <li>"A história não conta" — apelo conspiratório</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">As estimativas mais aceitas apontam entre 1/3 e 1/2 da população europeia morta pela Peste Negra no século XIV. O número de 90% é um exagero sem base histórica — e desinformação também pode acontecer com números.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 10 -->
+    <article class="news-card">
+      <div class="thumb thumb-10">🔥</div>
+      <div class="fake-stamp">FAKE NEWS</div>
+      <div class="card-body">
+        <span class="category">Idade Moderna</span>
+        <h3 class="fake-headline">INQUISIÇÃO: 9 MILHÕES de bruxas queimadas na Idade Média! O genocídio que a Igreja esconde</h3>
+        <p class="excerpt">Documentos secretos revelam a verdadeira escala do massacre que chocou o mundo.</p>
+        <div class="meta"><span>Por Redação Urgente 24h</span><span>Há 2 dias</span></div>
+        <button class="reveal-btn" onclick="revealCard(this)">🔍 Verificar esta notícia</button>
+        <div class="real-section">
+          <div class="real-label">✓ O que a história realmente diz</div>
+          <h4 class="real-headline">Caça às bruxas: estimativas apontam entre 40 e 60 mil execuções na Europa entre os séculos XV e XVII</h4>
+          <div class="real-source">Fonte: Historiadores como Brian Levack e Wolfgang Behringer</div>
+          <div class="tells-title">Por que a manchete é fake:</div>
+          <ul class="tells-list">
+            <li>"9 MILHÕES" — número absurdo, sem base histórica</li>
+            <li>"Genocídio" — termo usado para inflamar emoções</li>
+            <li>"Igreja esconde" — teoria da conspiração</li>
+            <li>"Documentos secretos" — fonte inexistente</li>
+            <li>Confunde Idade Média com Idade Moderna</li>
+          </ul>
+          <div class="truth-title">O que é verdade:</div>
+          <p class="truth-text">O número real é muito menor — entre 40 e 60 mil execuções. A maioria ocorreu na Idade Moderna (séculos XV a XVII), não na Idade Média. O número de 9 milhões é absurdo e serve para chocar, não para informar.</p>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="final-message" id="finalMessage">
+    <h2>🏆 Você verificou todas as 10 notícias!</h2>
+    <p>Agora você sabe: <span class="highlight">fake news não são um problema só da internet</span>. Elas existem desde a Antiguidade e sempre serviram para manipular, perseguir e lucrar.</p>
+    <p>A diferença é que hoje elas se espalham <span class="highlight">muito mais rápido</span>. Por isso, a educação midiática é essencial: <span class="highlight">não basta ter acesso à informação, é preciso saber verificar</span>.</p>
+    <button class="back-btn" onclick="switchView('quiz')">🔍 Fazer o quiz agora</button>
+  </div>
+
+</section>
+
+<script>
+/* ============================================================
+   NAVEGAÇÃO ENTRE VIEWS
+   ============================================================ */
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.top-nav a').forEach(a => a.classList.remove('active'));
+
+  document.getElementById('view' + view.charAt(0).toUpperCase() + view.slice(1)).classList.add('active');
+  document.getElementById('nav' + view.charAt(0).toUpperCase() + view.slice(1)).classList.add('active');
+
+  // classe do body (tema)
+  document.body.className = 'view-' + view;
+
+  // restaura dark mode das notícias se estava ativo
+  if (view === 'noticias' && localStorage.getItem('urgente-theme') === 'dark') {
+    document.body.classList.add('dark');
+    document.getElementById('viewNoticias').classList.add('dark');
+    document.getElementById('themeToggle').textContent = '☀️';
+  } else {
+    document.getElementById('viewNoticias').classList.remove('dark');
+    if (view === 'noticias') document.getElementById('themeToggle').textContent = '🌙';
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================================================
+   QUIZ
+   ============================================================ */
+const questions = [
+  { statement: "Nero culpou os cristãos pelo grande incêndio de Roma, em 64 d.C.", answer: "fato",
+    explain: "O historiador Tácito relata que Nero responsabilizou os cristãos pelo incêndio — uma acusação sem provas que serviu para desviar suspeitas do próprio imperador. (Integrante 2)" },
+  { statement: "Durante a Peste Negra, os judeus envenenaram poços e fontes de água para contaminar os cristãos.", answer: "fake",
+    explain: "Essa acusação foi completamente falsa e serviu para culpar uma minoria por uma doença cuja origem era desconhecida. Resultou em massacres e expulsões de comunidades judaicas no século XIV. (Integrante 2)" },
+  { statement: "Mais de 40 mil pessoas foram executadas por acusações de bruxaria na Europa entre os séculos XV e XVII.", answer: "fato",
+    explain: "As estimativas variam, mas historiadores calculam entre 40 mil e 60 mil execuções. A maioria das vítimas era de mulheres, acusadas sem provas concretas. (Integrante 3)" },
+  { statement: "O jornal New York Sun provou, em 1835, que havia vida na Lua.", answer: "fake",
+    explain: "A 'Grande Fraude da Lua' foi uma série de reportagens inventadas para aumentar as vendas do jornal. Descrevia seres humanoides com asas — tudo ficção. (Integrante 3)" },
+  { statement: "A vacina tríplice viral causa autismo.", answer: "fake",
+    explain: "O estudo de Andrew Wakefield (1998) foi retirado pela revista The Lancet e ele perdeu a licença médica. Não há evidência científica ligando a vacina ao autismo. (Integrante 4)" },
+  { statement: "Andrew Wakefield perdeu sua licença médica no Reino Unido após a publicação do estudo sobre vacinas.", answer: "fato",
+    explain: "Além da perda da licença, o artigo foi retirado da The Lancet por falhas éticas e metodológicas graves. (Integrante 4)" },
+  { statement: "As fake news surgiram com a chegada da internet.", answer: "fake",
+    explain: "A desinformação existe desde a Antiguidade. A internet não criou as fake news — ela apenas aumentou sua velocidade, alcance e influência. (Integrante 4)" },
+  { statement: "Algoritmos de redes sociais priorizam conteúdos que geram engajamento, incluindo aqueles que provocam raiva ou medo.", answer: "fato",
+    explain: "Os algoritmos selecionam conteúdos por sinais de interesse e interação. Publicações que despertam emoções fortes tendem a viralizar mais rapidamente. (Integrante 4)" },
+  { statement: "Os primeiros cristãos foram acusados de canibalismo ritual por causa de mal-entendidos sobre a Eucaristia.", answer: "fato",
+    explain: "Práticas religiosas cristãs eram mal interpretadas por quem estava fora da comunidade. A ideia de 'comer o corpo de Cristo' gerou acusações infundadas. (Integrante 2)" },
+  { statement: "A Peste Negra matou cerca de um terço da população europeia no século XIV.", answer: "fato",
+    explain: "As estimativas apontam que entre 1/3 e 1/2 da população europeia morreu. O medo e a falta de conhecimento científico alimentaram a busca por culpados. (Integrante 2)" }
+];
+
+let current = 0, score = 0, answered = false;
+
+const startScreen = document.getElementById('startScreen');
+const quizScreen = document.getElementById('quizScreen');
+const resultScreen = document.getElementById('resultScreen');
+const counter = document.getElementById('counter');
+const statement = document.getElementById('statement');
+const feedback = document.getElementById('feedback');
+const feedbackTag = document.getElementById('feedbackTag');
+const feedbackExplain = document.getElementById('feedbackExplain');
+const btnFake = document.getElementById('btnFake');
+const btnFact = document.getElementById('btnFact');
+const btnNext = document.getElementById('btnNext');
+const progressBar = document.getElementById('progressBar');
+
+function startQuiz(){
+  current = 0; score = 0;
+  startScreen.classList.add('hidden');
+  resultScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  loadQuestion();
+}
+
+function loadQuestion(){
+  answered = false;
+  const q = questions[current];
+  counter.textContent = `Pergunta ${current + 1} de ${questions.length}`;
+  statement.textContent = q.statement;
+  feedback.classList.remove('show', 'correct', 'wrong');
+  btnNext.classList.remove('show');
+  btnFake.disabled = false;
+  btnFact.disabled = false;
+  progressBar.style.width = `${(current / questions.length) * 100}%`;
+}
+
+function answer(choice){
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  const isCorrect = choice === q.answer;
+  if (isCorrect) score++;
+  feedback.classList.add('show', isCorrect ? 'correct' : 'wrong');
+  feedbackTag.textContent = isCorrect ? '✅ Você acertou!' : `❌ Era ${q.answer.toUpperCase()}.`;
+  feedbackExplain.textContent = q.explain;
+  btnFake.disabled = true;
+  btnFact.disabled = true;
+  btnNext.textContent = current === questions.length - 1 ? 'Ver resultado →' : 'Próxima pergunta →';
+  btnNext.classList.add('show');
+}
+
+function nextQuestion(){
+  current++;
+  if (current >= questions.length) showResult();
+  else loadQuestion();
+}
+
+function showResult(){
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.remove('hidden');
+  progressBar.style.width = '100%';
+  document.getElementById('scoreValue').textContent = score;
+  let title, msg;
+  if (score === 10){ title='🏆 Perfeito!'; msg='Você é um verdadeiro detetive da informação. Agora ajude a espalhar essa consciência!'; }
+  else if (score >= 7){ title='🎯 Muito bem!'; msg='Você reconhece a maioria das fake news. Continue praticando o pensamento crítico!'; }
+  else if (score >= 4){ title='🤔 Na média'; msg='Você acertou algumas, mas ainda dá para melhorar. Lembre-se das 6 perguntas abaixo!'; }
+  else { title='📚 Hora de revisar'; msg='Não se preocupe: reconhecer fake news é uma habilidade que se treina. Use as 6 perguntas abaixo!'; }
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultMsg').textContent = msg;
+}
+
+function restartQuiz(){ startQuiz(); }
+
+/* ============================================================
+   MANCHETES
+   ============================================================ */
+function toggleTells(btn){
+  const card = btn.closest('.headline-card');
+  const tells = card.querySelector('.tells');
+  tells.classList.toggle('show');
+  btn.textContent = tells.classList.contains('show') ? 'Ocultar características ▲' : 'Ver características ▼';
+}
+
+function revealAllManchetes(btn){
+  const allTells = document.querySelectorAll('#viewManchetes .tells');
+  const allBtns = document.querySelectorAll('#viewManchetes .toggle-btn');
+  const anyHidden = [...allTells].some(t => !t.classList.contains('show'));
+  allTells.forEach(t => t.classList.toggle('show', anyHidden));
+  allBtns.forEach(b => b.textContent = anyHidden ? 'Ocultar características ▲' : 'Ver características ▼');
+  btn.textContent = anyHidden ? 'Ocultar todas as características' : 'Revelar todas as características';
+}
+
+/* ============================================================
+   NOTÍCIAS
+   ============================================================ */
+let revealedCount = 0;
+const totalCards = document.querySelectorAll('#viewNoticias .news-card').length;
+
+function revealCard(btn){
+  const card = btn.closest('.news-card');
+  if (card.classList.contains('revealed')) return;
+  card.classList.add('revealed');
+  revealedCount++;
+  document.getElementById('revealedCount').textContent = revealedCount;
+  if (revealedCount === totalCards) showFinalMessage();
+}
+
+function revealAllNoticias(){
+  const cards = document.querySelectorAll('#viewNoticias .news-card:not(.revealed)');
+  if (cards.length === 0) return;
+  const btn = document.getElementById('revealAllBtn');
+  btn.disabled = true;
+  btn.textContent = 'Revelando...';
+  cards.forEach((card, i) => {
+    setTimeout(() => {
+      if (!card.classList.contains('revealed')) {
+        card.classList.add('revealed');
+        revealedCount++;
+        document.getElementById('revealedCount').textContent = revealedCount;
+        if (revealedCount === totalCards) {
+          showFinalMessage();
+          btn.textContent = '✓ Todas reveladas';
+        }
+      }
+    }, i * 120);
+  });
+}
+
+function showFinalMessage(){
+  const msg = document.getElementById('finalMessage');
+  msg.classList.add('show');
+  setTimeout(() => msg.scrollIntoView({ behavior:'smooth', block:'center' }), 400);
+}
+
+/* DARK MODE (notícias) */
+function toggleTheme(){
+  document.getElementById('viewNoticias').classList.toggle('dark');
+  document.body.classList.toggle('dark');
+  const isDark = document.getElementById('viewNoticias').classList.contains('dark');
+  document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('urgente-theme', isDark ? 'dark' : 'light');
+}
+</script>
+
+</body>
+</html>
